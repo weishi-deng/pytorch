@@ -514,7 +514,7 @@ class AOTAutogradCacheDetails(FxGraphHashDetails):
         # a graph compiled for one autocast dtype (e.g. bfloat16) when
         # running under a different autocast dtype (e.g. float16).
         self.autocast_state: dict[str, str] = {}
-        for device_type in ["cuda", "cpu", "xpu"]:
+        for device_type in torch._C._autocast_supported_devices():
             if torch.is_autocast_enabled(device_type):
                 self.autocast_state[device_type] = str(
                     torch.get_autocast_dtype(device_type)
