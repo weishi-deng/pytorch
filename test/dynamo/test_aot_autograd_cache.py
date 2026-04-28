@@ -3207,6 +3207,26 @@ class AOTAutogradCacheTests(CacheKeyEquivalenceMixin, InductorTestCase):
             self.assertEqual(counters["aot_autograd"]["autograd_cache_miss"], 1)
             self.assertEqual(counters["aot_autograd"]["autograd_cache_hit"], 0)
 
+            # Run 3: compile under bfloat16 again
+            counters.clear()
+            torch._dynamo.reset()
+            compiled3 = torch.compile(model, backend="inductor")
+            with torch.no_grad(), torch.amp.autocast(GPU_TYPE, dtype=torch.bfloat16):
+                out_bf16_2 = compiled3(x)
+            self.assertEqual(out_bf16_2.dtype, torch.bfloat16)
+            self.assertEqual(counters["aot_autograd"]["autograd_cache_miss"], 0)
+            self.assertEqual(counters["aot_autograd"]["autograd_cache_hit"], 1)
+
+            # Run 4: compile under float16 again
+            counters.clear()
+            torch._dynamo.reset()
+            compiled4 = torch.compile(model, backend="inductor")
+            with torch.no_grad(), torch.amp.autocast(GPU_TYPE, dtype=torch.float16):
+                out_fp16_2 = compiled4(x)
+            self.assertEqual(out_fp16_2.dtype, torch.float16)
+            self.assertEqual(counters["aot_autograd"]["autograd_cache_miss"], 0)
+            self.assertEqual(counters["aot_autograd"]["autograd_cache_hit"], 1)
+
 
 @functorch_config.patch({"bundled_autograd_cache": True})
 class AOTAutogradCacheBundledTests(AOTAutogradCacheTests):
