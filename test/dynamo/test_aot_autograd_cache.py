@@ -3168,6 +3168,7 @@ class AOTAutogradCacheTests(CacheKeyEquivalenceMixin, InductorTestCase):
     @unittest.skipIf(not HAS_GPU, "requires accelerator")
     @functorch_config.patch({"enable_autograd_cache": True})
     @inductor_config.patch("fx_graph_cache", True)
+    @inductor_config.patch("fx_graph_remote_cache", False)
     def test_autocast_cache_distinguishes_dtype(self):
         """
         Ensure AOTAutograd cache key includes autocast dtype so that
