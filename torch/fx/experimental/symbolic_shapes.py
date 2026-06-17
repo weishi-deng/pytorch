@@ -2558,7 +2558,10 @@ def _maybe_evaluate_static_worker(
             # for jagged layout NestedTensors today
             continue
         if vr is None:
-            raise AssertionError(f"vr must not be None for symbol {k}")
+            log.warning(
+                "Symbol %s missing from var_to_range, skipping static evaluation", k
+            )
+            return None
         if size_oblivious and is_size_like:
             lower = max(2, vr.lower)
             # Clamping size-oblivious to some quantity below sys.maxsize

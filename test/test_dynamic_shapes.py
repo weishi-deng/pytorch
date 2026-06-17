@@ -1097,6 +1097,13 @@ def forward(self, x_1):
         self.assertTrue(shape_env.evaluate_expr(test1))
         self.assertTrue(shape_env.evaluate_expr(test2))
 
+    def test_simplify_max_missing_var_to_range(self):
+        shape_env = ShapeEnv()
+        s = sympy.Symbol("test_sym", integer=True)
+        expr = sympy.Max(0, s)
+        result = shape_env.simplify(expr)
+        self.assertIsNotNone(result)
+
     def test_sympy_optimized_add(self):
         shape_env = ShapeEnv()
         s0 = create_symint(shape_env, 2)
