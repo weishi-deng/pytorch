@@ -1175,7 +1175,11 @@ class ComboKernelTests(TestCase):
         out_eager = fn(*inps)
         fn_c = torch.compile(fn)
         out_compiled, code = run_and_get_code(fn_c, *inps)
-        self.assertEqual(out_eager, out_compiled)
+        # Each output sums 2048 float32 values, so the tiled (r0_, r1_)
+        # reduction order differs from eager by float32 rounding noise
+        # (~1e-5 absolute, and unbounded relatively where the sum cancels).
+        # Same tolerances as the sibling _per / _red reduction tests above.
+        self.assertEqual(out_eager, out_compiled, atol=1e-4, rtol=1e-4)
         # 2D reduction kernels (r0_, r1_) are separated from combo kernels
         self.assertEqual(torch._inductor.metrics.generated_kernel_count, 2)
 
@@ -3643,7 +3647,11 @@ class ComboKernelMetadataTests(TestCase):
             return torch.relu(a), torch.sigmoid(b)
 
         inps = [torch.rand(1024, device=GPU_TYPE) for _ in range(2)]
-        code = self._combo_code(fn, inps)
+        from torch._inductor.scheduler import Scheduler
+
+        with patch.object(Scheduler, "speedup_by_combo_kernel", return_value=True):
+            code = self._combo_code(fn, inps)
+
         self.assertRegex(code, r"num_gb = \d*\.\d+")
         self.assertIn(f"device='{GPU_TYPE}'", code)
         self.assertNotIn(f"device={GPU_TYPE}", code)
